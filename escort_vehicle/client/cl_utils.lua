@@ -125,7 +125,7 @@ end
 -- 車両検索
 -- ============================================================
 
----@return number|nil 最も近い対応車両のエンティティ
+---@return number|nil 最も近い車両のエンティティ（車両種別制限なし）
 function GetClosestStretcherVehicle()
     local myPed    = PlayerPedId()
     local myCoords = GetEntityCoords(myPed)
@@ -135,13 +135,10 @@ function GetClosestStretcherVehicle()
     local vehicles = GetGamePool('CVehicle')
     for _, vehicle in ipairs(vehicles) do
         if DoesEntityExist(vehicle) then
-            local vehicleModel = GetEntityModel(vehicle)
-            if Config.IsStretcherVehicle(vehicleModel) then
-                local dist = #(myCoords - GetEntityCoords(vehicle))
-                if dist < closestDistance then
-                    closestDistance = dist
-                    closestVehicle  = vehicle
-                end
+            local dist = #(myCoords - GetEntityCoords(vehicle))
+            if dist < closestDistance then
+                closestDistance = dist
+                closestVehicle  = vehicle
             end
         end
     end
