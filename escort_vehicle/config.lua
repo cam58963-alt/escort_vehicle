@@ -30,12 +30,6 @@ Config.Stretcher = {
         rotZ = 0.0, -- プレイヤーと同じ向き
     },
     
-    -- 対応車両
-    vehicles = {
-        [`ambulance`] = true,
-        [`emsnspeedo`] = true,
-    },
-    
     -- 距離設定（範囲拡大）
     interactionDistance = 10.0,  -- 車両判定範囲拡大
     placeDistance = 2.0,
@@ -86,6 +80,5 @@ function Config.IsJobAllowed(jobName)
     return false
 end
 
-function Config.IsStretcherVehicle(vehicleModel)
-    return Config.Stretcher.vehicles[vehicleModel] == true
-end
+-- Config.IsStretcherVehicle は車両種別制限廃止のため削除。
+-- 全車両共通でストレッチャー収納処理を実行する。

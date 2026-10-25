@@ -59,15 +59,10 @@ local function ProcessVehicleEntry()
         return
     end
 
-    -- ストレッチャー対応車両か確認
-    local vehicleModel = GetEntityModel(vehicle)
-    if not Config.IsStretcherVehicle(vehicleModel) then
-        isProcessingVehicleEntry = false
-        return
-    end
-
-    -- ストレッチャー処理
+    -- ストレッチャー処理（車両種別を問わず全車両で実行）
     DebugLog('Processing stretcher on vehicle entry')
+
+    local vehicleModel = GetEntityModel(vehicle)
 
     if StretcherState.patient then
         -- 患者がいる → 車両に搬送（後部座席から優先）
