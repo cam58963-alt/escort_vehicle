@@ -75,6 +75,7 @@ Config.Notifications = {
     inventoryFull = 'インベントリがいっぱいです',
     noFreeSeats = '車両に空きがありません',
     patientGone = '患者がいなくなりました',
+    npcTransportFailed = '患者を車両に乗せられませんでした（車のそばに降ろしました）',
 }
 
 -- ヘルパー関数

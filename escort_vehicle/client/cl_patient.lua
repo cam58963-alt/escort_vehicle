@@ -72,14 +72,20 @@ function PutPatientInVehicle(vehicle, seat)
 end
 
 -- 乗せている訓練用NPC が消えた（訓練終了・時間切れなど）ら患者を外す
+-- 離れていると NPC がこのクライアントで見えなくなるだけなので、
+-- ストレッチャーの近くにいる（または持っている）時だけ確認する
+local NPC_CHECK_DISTANCE = 50.0
+
 CreateThread(function()
     while true do
         Wait(1000)
         local patient = StretcherState.patient
-        if patient and patient.type == 'npc' then
+        if patient and patient.type == 'npc' and StretcherState.Exists() then
+            local near = StretcherState.carrying
+                or #(GetEntityCoords(PlayerPedId()) - GetEntityCoords(StretcherState.object)) <= NPC_CHECK_DISTANCE
             local exists = NetworkDoesNetworkIdExist(patient.netId)
                 and DoesEntityExist(NetworkGetEntityFromNetworkId(patient.netId))
-            if not exists then
+            if near and not exists then
                 DebugLog('NPC patient no longer exists: ' .. DescribePatient(patient))
                 StretcherState.patient = nil
                 Notify(Config.Notifications.patientGone, 'inform')
@@ -162,20 +168,34 @@ RegisterNetEvent('escort_vehicle:client:npcRemoveFromStretcher', function(npcNet
     DebugLog('NPC detached from stretcher: ' .. tostring(npcNetId))
 end)
 
-RegisterNetEvent('escort_vehicle:client:npcPutInVehicle', function(npcNetId, vehicleNetId, seatIndex)
+-- 車に乗せられなかったことを、ストレッチャーを使った人に知らせる
+local function ReportNpcTransportFailed(npcNetId, requesterId)
+    TriggerServerEvent('escort_vehicle:server:npcTransportFailed', npcNetId, requesterId)
+end
+
+RegisterNetEvent('escort_vehicle:client:npcPutInVehicle', function(npcNetId, vehicleNetId, seatIndex, requesterId)
     local npc = WaitForNetEntity(npcNetId, 3000)
-    local vehicle = WaitForNetEntity(vehicleNetId, 5000)
-    if not npc or not vehicle then
-        DebugLog('NPC or vehicle not found for NPC transport')
+    if not npc then
+        DebugLog('NPC not found for NPC transport')
+        ReportNpcTransportFailed(npcNetId, requesterId)
         return
     end
     EnsureControl(npc)
 
+    -- 乗せられなくても、NPC はストレッチャーから降ろして車のそばに残す
     DetachEntity(npc, true, false)
     ClearPedTasksImmediately(npc)
 
+    local vehicle = WaitForNetEntity(vehicleNetId, 5000)
+    if not vehicle then
+        DebugLog('Vehicle not found for NPC transport')
+        ReportNpcTransportFailed(npcNetId, requesterId)
+        return
+    end
+
     if not IsVehicleSeatFree(vehicle, seatIndex) then
         DebugLog('Seat occupied during NPC warp')
+        ReportNpcTransportFailed(npcNetId, requesterId)
         return
     end
 
@@ -188,6 +208,10 @@ RegisterNetEvent('escort_vehicle:client:npcPutInVehicle', function(npcNetId, veh
     if GetVehiclePedIsIn(npc, false) ~= vehicle then
         DebugLog('NPC warp failed, trying SetPedIntoVehicle')
         SetPedIntoVehicle(npc, vehicle, seatIndex)
+        Wait(500)
+        if GetVehiclePedIsIn(npc, false) ~= vehicle then
+            ReportNpcTransportFailed(npcNetId, requesterId)
+        end
     else
         DebugLog('NPC warp successful')
     end

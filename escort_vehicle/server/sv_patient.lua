@@ -164,9 +164,23 @@ RegisterNetEvent('escort_vehicle:server:putNpcInVehicle', function(npcNetId, veh
     seatIndex = tonumber(seatIndex)
     if not seatIndex then return end
 
-    TriggerClientEvent('escort_vehicle:client:npcPutInVehicle', owner, npcNetId, vehicleNetId, seatIndex)
+    TriggerClientEvent('escort_vehicle:client:npcPutInVehicle', owner, npcNetId, vehicleNetId, seatIndex, src)
     ServerNotify(src, Config.Notifications.patientInVehicle, 'success')
     ServerDebugLog(('Rescue NPC %s loaded into vehicle seat %d'):format(tostring(npcNetId), seatIndex))
+end)
+
+-- NPC のオーナーから「車に乗せられなかった」と届いたら、ストレッチャーを使った人に知らせる
+RegisterNetEvent('escort_vehicle:server:npcTransportFailed', function(npcNetId, requesterId)
+    local src = source
+    requesterId = tonumber(requesterId)
+    if not requesterId or not IsValidPlayer(requesterId) then return end
+
+    -- 送ってきたのが本当にその NPC のオーナーか確認する（NPC が消えていたら確認しない）
+    local npc = NetworkGetEntityFromNetworkId(tonumber(npcNetId) or 0)
+    if npc and npc ~= 0 and DoesEntityExist(npc) and NetworkGetEntityOwner(npc) ~= src then return end
+
+    ServerNotify(requesterId, Config.Notifications.npcTransportFailed, 'error')
+    ServerDebugLog(('Rescue NPC %s transport failed'):format(tostring(npcNetId)))
 end)
 
 -- ============================================================

@@ -90,6 +90,7 @@ FiveM（QBox）向けの救急隊用ストレッチャースクリプトです�
 - NPC を乗せたまま運転席か助手席に乗ると、NPC が後ろの席に移ります。訓練を始めた人が同じ車に乗って病院へ向かえば、訓練を完了できます
 - NPC はその NPC を出したプレイヤーのクライアントで動かします（サーバーが中継します）
 - 訓練が終わって NPC が消えると、ストレッチャーは空に戻ります
+- 席が埋まっていたなどで車に乗せられなかったときは、NPC を車のそばに降ろして「患者を車両に乗せられませんでした」と知らせます。もう一度ストレッチャーを出して乗せ直してください
 - ems_npc_rescue で「ストレッチャー必須」にした現場では、cam_souziki の掃除機は使えません
 
 ### 注意点
@@ -162,6 +163,7 @@ TriggerEvent('ambulance:server:SetPlayerOut', src, targetPlayerId)
 | `escort_vehicle:client:npcPlaceOnStretcher` | サーバー → NPC のオーナー | NPC をストレッチャーにアタッチ |
 | `escort_vehicle:client:npcRemoveFromStretcher` | サーバー → NPC のオーナー | NPC をストレッチャーから外す |
 | `escort_vehicle:client:npcPutInVehicle` | サーバー → NPC のオーナー | NPC を指定座席にワープ |
+| `escort_vehicle:server:npcTransportFailed` | NPC のオーナー → サーバー | 車に乗せられなかったことを、ストレッチャーを使った人に知らせる |
 
 サーバー側のイベントはすべてジョブ権限と対象プレイヤーの接続をチェックしてから処理します。
 訓練用NPC のイベントは、ジョブ権限・NPC の StateBag・プレイヤーとの距離をチェックします。
