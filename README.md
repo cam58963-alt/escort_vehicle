@@ -43,7 +43,9 @@ FiveM（QBox）向けの救急隊用ストレッチャースクリプトです�
    ensure escort_vehicle
    ```
 
-3. `ox_inventory/data/items.lua` にアイテムを追加します。
+3. アイテムを ox_inventory に登録します。
+   - `escort_vehicle/_data/items.lua` の中身（`return {` と最後の `}` の内側）を、`ox_inventory/data/items.lua` にコピーします。
+   - `escort_vehicle/_images/stretcher.png` を `ox_inventory/web/images/` にコピーします。
 
    ```lua
    ['stretcher'] = {
@@ -51,14 +53,26 @@ FiveM（QBox）向けの救急隊用ストレッチャースクリプトです�
        weight = 5000,
        stack = false,
        close = true,
-       description = '救急搬送用のストレッチャー',
+       description = '救急搬送用ストレッチャー。使用して展開できます。',
        client = {
-           export = 'escort_vehicle.useStretcher',
-       },
+           export = 'escort_vehicle.useStretcher'  -- 【重要】リソース名と完全一致
+       }
    },
    ```
 
+   > `client.export` の `escort_vehicle` はリソース（フォルダ）名です。フォルダ名を変えた場合は、ここも合わせてください。
+   > アイテム名を変える場合は `config.lua` の `Config.Stretcher.itemName` も合わせてください。
+
 4. 救急隊員に `stretcher` アイテムを配布します（ショップ・ジョブ倉庫など）。
+
+### 同梱ファイル
+
+| パス | 内容 |
+| --- | --- |
+| `escort_vehicle/_data/items.lua` | ox_inventory のアイテム定義（`stretcher`） |
+| `escort_vehicle/_images/stretcher.png` | インベントリ画像 |
+
+`_data` と `_images` はリソースとしては読み込まれません（`fxmanifest.lua` に含まれていません）。ox_inventory に手でコピーするためのファイルです。
 
 ## 使い方
 
@@ -178,6 +192,10 @@ TriggerEvent('ambulance:server:SetPlayerOut', src, targetPlayerId)
 escort_vehicle/
 ├── fxmanifest.lua
 ├── config.lua               設定
+├── _data/
+│   └── items.lua            ox_inventory のアイテム定義（コピー用）
+├── _images/
+│   └── stretcher.png        インベントリ画像（コピー用）
 ├── client/
 │   ├── cl_utils.lua         共通関数（権限・通知・読み込み・患者/車両検索）
 │   ├── cl_state.lua         ストレッチャーの状態管理
