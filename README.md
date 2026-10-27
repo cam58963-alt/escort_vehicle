@@ -3,7 +3,7 @@
 FiveM（QBox）向けの救急隊用ストレッチャースクリプトです。
 ストレッチャーを展開して押して運び、患者を乗せ、車両に乗り込むだけで患者を後部座席へ搬送できます。
 
-- バージョン: 0.6.5
+- バージョン: 0.7.0
 - 作者: otonashi
 - フレームワーク: [qbx_core](https://github.com/Qbox-project/qbx_core)
 
@@ -13,6 +13,7 @@ FiveM（QBox）向けの救急隊用ストレッチャースクリプトです�
 - **押して運ぶ**: 展開したストレッチャーをプレイヤーが押して移動。ドア開閉などでアニメーションが外れても自動で戻ります
 - **設置 / 回収**: 正面の地面にストレッチャーを置き、再び持ち上げることができます
 - **患者を乗せる / 降ろす**: 近くのプレイヤーをストレッチャーに寝かせたり降ろしたりできます
+- **訓練用NPC 対応**: [ems_npc_rescue](https://github.com/cam58963-alt/ems_npc_rescue) の訓練用NPC も、プレイヤーと同じようにストレッチャーに乗せて車に積めます
 - **車両への自動搬送**: ストレッチャーを持ったまま車両の運転席か助手席に乗ると（車種は問いません）、
   - 患者が乗っていれば、空いている席（後ろの席から優先）に患者を乗せます
   - 患者がいなければ、ストレッチャーだけを収納します
@@ -79,6 +80,17 @@ FiveM（QBox）向けの救急隊用ストレッチャースクリプトです�
 
 - **ストレッチャー本体**（設置中）: 患者を乗せる / 患者を降ろす / インベントリに収納
 - **他のプレイヤー**: ストレッチャーに乗せる（ストレッチャー展開中のみ）
+- **訓練用NPC**: ストレッチャーに乗せる（ストレッチャー展開中のみ）
+
+### 訓練用NPC（ems_npc_rescue）
+
+`isRescueMissionNPC` StateBag が付いた NPC は、プレイヤーの患者と同じ操作で扱えます。
+
+- `E` キー / ストレッチャーの「患者を乗せる」: 近くのプレイヤーと訓練用NPC のうち、一番近い方を乗せます
+- NPC を乗せたまま運転席か助手席に乗ると、NPC が後ろの席に移ります。訓練を始めた人が同じ車に乗って病院へ向かえば、訓練を完了できます
+- NPC はその NPC を出したプレイヤーのクライアントで動かします（サーバーが中継します）
+- 訓練が終わって NPC が消えると、ストレッチャーは空に戻ります
+- ems_npc_rescue で「ストレッチャー必須」にした現場では、cam_souziki の掃除機は使えません
 
 ### 注意点
 
@@ -103,6 +115,9 @@ FiveM（QBox）向けの救急隊用ストレッチャースクリプトです�
 | `Config.Stretcher.pushAnim` | 押すときのアニメーション | `anim@heists@box_carry@` / `idle` |
 | `Config.Stretcher.patientAnim` | 患者が寝ているアニメーション | `anim@gangops@morgue@table@` / `body_search` |
 | `Config.Stretcher.patientOffset` | ストレッチャー上の患者位置 | `z = 1.05` |
+| `Config.RescueNPC.enabled` | 訓練用NPC をストレッチャーで運べるようにする | `true` |
+| `Config.RescueNPC.stateKey` | 訓練用NPC を見分ける StateBag のキー | `'isRescueMissionNPC'` |
+| `Config.RescueNPC.maxDistance` | サーバーで確認する、プレイヤーと NPC の最大距離（m） | `15.0` |
 | `Config.DefaultKeys` | 既定キー | `G` / `E` / `X` |
 | `Config.Notifications` | 通知メッセージ | 日本語メッセージ一式 |
 
@@ -141,8 +156,15 @@ TriggerEvent('ambulance:server:SetPlayerOut', src, targetPlayerId)
 | `escort_vehicle:client:placeOnStretcher` | サーバー → 患者 | ストレッチャーにアタッチ |
 | `escort_vehicle:client:removeFromStretcher` | サーバー → 患者 | ストレッチャーから外す |
 | `escort_vehicle:client:putInVehicle` | サーバー → 患者 | 指定座席にワープ |
+| `escort_vehicle:server:placeNpcOnStretcher` | クライアント → サーバー | 訓練用NPC をストレッチャーに乗せる |
+| `escort_vehicle:server:removeNpcFromStretcher` | クライアント → サーバー | 訓練用NPC を降ろす |
+| `escort_vehicle:server:putNpcInVehicle` | クライアント → サーバー | 訓練用NPC を車両に乗せる |
+| `escort_vehicle:client:npcPlaceOnStretcher` | サーバー → NPC のオーナー | NPC をストレッチャーにアタッチ |
+| `escort_vehicle:client:npcRemoveFromStretcher` | サーバー → NPC のオーナー | NPC をストレッチャーから外す |
+| `escort_vehicle:client:npcPutInVehicle` | サーバー → NPC のオーナー | NPC を指定座席にワープ |
 
 サーバー側のイベントはすべてジョブ権限と対象プレイヤーの接続をチェックしてから処理します。
+訓練用NPC のイベントは、ジョブ権限・NPC の StateBag・プレイヤーとの距離をチェックします。
 
 ## ファイル構成
 
@@ -153,6 +175,7 @@ escort_vehicle/
 ├── client/
 │   ├── cl_utils.lua         共通関数（権限・通知・読み込み・患者/車両検索）
 │   ├── cl_state.lua         ストレッチャーの状態管理
+│   ├── cl_patient.lua       患者（プレイヤー / 訓練用NPC）の乗せ降ろし
 │   ├── cl_stretcher.lua     展開・設置・回収・収納、アイテム export
 │   ├── cl_vehicle.lua       車両乗車時の自動搬送
 │   ├── cl_target.lua        ox_target 連携

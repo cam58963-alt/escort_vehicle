@@ -1,4 +1,4 @@
--- client/cl_utils.lua v0.6.5 - ユーティリティ関数
+-- client/cl_utils.lua v0.7.0 - ユーティリティ関数
 
 local LOAD_TIMEOUT_MS = 5000  -- モデル/アニメーション読み込みの最大待ち時間
 
@@ -90,35 +90,80 @@ function LoadModel(model)
 end
 
 -- ============================================================
--- 患者検索（近くのプレイヤー）
+-- 患者検索（近くのプレイヤー / 訓練用NPC）
+-- 患者は { type = 'player', serverId = n } か { type = 'npc', netId = n } で表す
 -- ============================================================
 
----@return number|nil 最も近い患者の Server ID
+---@param ped number
+---@return boolean 訓練用NPC（ems_npc_rescue）か
+function IsRescueNpc(ped)
+    if not Config.RescueNPC or not Config.RescueNPC.enabled then return false end
+    if not ped or ped == 0 or not DoesEntityExist(ped) or IsPedAPlayer(ped) then return false end
+    local state = Entity(ped).state
+    return state ~= nil and state[Config.RescueNPC.stateKey] == true
+end
+
+---@param ped number 訓練用NPC の Ped
+---@return table|nil 患者
+function NpcPatientFromPed(ped)
+    if not IsRescueNpc(ped) or not NetworkGetEntityIsNetworked(ped) then return nil end
+    local netId = NetworkGetNetworkIdFromEntity(ped)
+    if not netId or netId == 0 then return nil end
+    return { type = 'npc', netId = netId }
+end
+
+---@param ped number
+---@return boolean ストレッチャーに乗せられる状態か（車に乗っていない・何かに乗っていない）
+function IsNpcFreeForStretcher(ped)
+    return not IsPedInAnyVehicle(ped, false) and not IsEntityAttached(ped)
+end
+
+---@param patient table|nil
+---@return string ログ用の表示
+function DescribePatient(patient)
+    if not patient then return 'none' end
+    if patient.type == 'npc' then return 'npc:' .. tostring(patient.netId) end
+    return 'player:' .. tostring(patient.serverId)
+end
+
+---@return table|nil 最も近い患者
 function GetNearbyPatient()
     local myPed    = PlayerPedId()
     local myCoords = GetEntityCoords(myPed)
-    local closestPlayer   = nil
-    local closestDistance  = Config.Stretcher.patientDistance
+    local closest  = nil
+    local closestDistance = Config.Stretcher.patientDistance
 
     for _, player in ipairs(GetActivePlayers()) do
         local targetPed = GetPlayerPed(player)
         if targetPed ~= myPed and DoesEntityExist(targetPed) then
             local dist = #(myCoords - GetEntityCoords(targetPed))
             if dist < closestDistance then
-                closestDistance = dist
-                closestPlayer  = player
+                local serverId = GetPlayerServerId(player)
+                if serverId and serverId > 0 then
+                    closestDistance = dist
+                    closest = { type = 'player', serverId = serverId }
+                end
             end
         end
     end
 
-    if closestPlayer then
-        local serverId = GetPlayerServerId(closestPlayer)
-        if serverId and serverId > 0 then
-            return serverId
+    -- 訓練用NPC
+    if Config.RescueNPC and Config.RescueNPC.enabled then
+        for _, ped in ipairs(GetGamePool('CPed')) do
+            if IsRescueNpc(ped) and IsNpcFreeForStretcher(ped) then
+                local dist = #(myCoords - GetEntityCoords(ped))
+                if dist < closestDistance then
+                    local patient = NpcPatientFromPed(ped)
+                    if patient then
+                        closestDistance = dist
+                        closest = patient
+                    end
+                end
+            end
         end
     end
 
-    return nil
+    return closest
 end
 
 -- ============================================================

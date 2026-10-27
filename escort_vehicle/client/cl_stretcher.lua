@@ -1,4 +1,4 @@
--- client/cl_stretcher.lua v0.6.5 - ストレッチャーの展開・設置・回収・クリーンアップ
+-- client/cl_stretcher.lua v0.7.0 - ストレッチャーの展開・設置・回収・クリーンアップ
 
 -- ============================================================
 -- ストレッチャーをプレイヤーにアタッチする共通処理
@@ -102,8 +102,7 @@ function CleanupStretcher()
     -- FIX #6: 患者がストレッチャーにアタッチされていたら先にデタッチ
     if StretcherState.patient then
         DebugLog('Patient still on stretcher during cleanup - requesting detach')
-        TriggerServerEvent('escort_vehicle:server:removeFromStretcher', StretcherState.patient)
-        StretcherState.patient = nil
+        RemovePatientFromStretcher(true)
     end
 
     if StretcherState.Exists() then

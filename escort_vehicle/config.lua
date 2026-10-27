@@ -1,7 +1,7 @@
--- config.lua v0.6.5
+-- config.lua v0.7.0
 Config = {}
 Config.Debug = false  -- 開発中はtrue、本番ではfalse
-Config.Version = '0.6.5'
+Config.Version = '0.7.0'
 
 -- Job制限設定
 Config.JobRestriction = {
@@ -45,6 +45,13 @@ Config.Stretcher = {
     },
 }
 
+-- 訓練用NPC（ems_npc_rescue）をストレッチャーで運ぶ設定
+Config.RescueNPC = {
+    enabled = true,
+    stateKey = 'isRescueMissionNPC', -- NPC に付いている StateBag のキー
+    maxDistance = 15.0,              -- サーバーで確認する、プレイヤーと NPC の最大距離（m）
+}
+
 -- キーバインド設定（プレイヤーがF5で変更可能）
 Config.DefaultKeys = {
     place = 'G',      -- 設置/回収
@@ -67,6 +74,7 @@ Config.Notifications = {
     patientOnStretcher = '患者が乗っているため収納できません',
     inventoryFull = 'インベントリがいっぱいです',
     noFreeSeats = '車両に空きがありません',
+    patientGone = '患者がいなくなりました',
 }
 
 -- ヘルパー関数

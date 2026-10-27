@@ -1,4 +1,4 @@
--- server/sv_utils.lua v0.6.5 - サーバーユーティリティ
+-- server/sv_utils.lua v0.7.0 - サーバーユーティリティ
 
 local QBX = exports.qbx_core
 
