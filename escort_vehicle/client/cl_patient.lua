@@ -31,11 +31,24 @@ function PlacePatientOnStretcher(patient)
     return true
 end
 
----@param silent boolean|nil true なら通知を出さない
+-- 訓練用NPC を降ろせる、プレイヤーとストレッチャーの距離（サーバーの maxDistance より少し短く）
+local NPC_UNLOAD_DISTANCE = 10.0
+
+---@param silent boolean|nil true なら通知を出さない（ストレッチャーを片付ける時）
 ---@return boolean 降ろす指示を出したか
 function RemovePatientFromStretcher(silent)
     local patient = StretcherState.patient
     if not patient then return false end
+
+    -- 訓練用NPC はサーバーが距離を確認して断るので、離れている時はここで止めて患者を残す
+    -- （片付ける時はストレッチャーを消すと NPC も外れるので確認しない）
+    if not silent and patient.type == 'npc' and StretcherState.Exists() then
+        local dist = #(GetEntityCoords(PlayerPedId()) - GetEntityCoords(StretcherState.object))
+        if dist > NPC_UNLOAD_DISTANCE then
+            Notify(Config.Notifications.tooFarFromStretcher, 'error')
+            return false
+        end
+    end
 
     DebugLog('Removing patient from stretcher: ' .. DescribePatient(patient))
 
