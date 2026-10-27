@@ -1,9 +1,9 @@
--- client/cl_state.lua v0.6.5 - 共有状態管理
+-- client/cl_state.lua v0.7.0 - 共有状態管理
 -- 他モジュールから参照されるグローバル状態変数
 
 StretcherState = {
     object   = nil,   -- ストレッチャーのエンティティ
-    patient  = nil,   -- 乗っている患者の Server ID
+    patient  = nil,   -- 乗っている患者 { type = 'player', serverId } / { type = 'npc', netId }
     carrying = false, -- プレイヤーが持っているか
 }
 

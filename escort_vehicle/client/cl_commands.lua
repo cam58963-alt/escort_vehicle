@@ -1,4 +1,4 @@
--- client/cl_commands.lua v0.6.5 - コマンド・キーバインド・HUD・デバッグ
+-- client/cl_commands.lua v0.7.0 - コマンド・キーバインド・HUD・デバッグ
 
 -- ============================================================
 -- コマンド登録
@@ -16,27 +16,16 @@ RegisterCommand('stretcher_patient_toggle', function()
 
     if StretcherState.patient then
         -- 患者がいる → 降ろす
-        DebugLog('Removing patient from stretcher: ' .. StretcherState.patient)
-        TriggerServerEvent('escort_vehicle:server:removeFromStretcher',
-            StretcherState.patient)
         -- FIX #8: サーバー応答を信頼し、ここで状態リセット
-        -- サーバーが失敗した場合でもクライアント側のリカバリは
-        -- removeFromStretcher のサーバー側エラーログで追跡可能
-        StretcherState.patient = nil
-        Notify(Config.Notifications.patientRemoved, 'success')
+        RemovePatientFromStretcher()
     else
-        -- 患者がいない → 乗せる
-        local targetId = GetNearbyPatient()
-        if not targetId then
+        -- 患者がいない → 乗せる（近くのプレイヤー / 訓練用NPC）
+        local patient = GetNearbyPatient()
+        if not patient then
             Notify(Config.Notifications.noPatient, 'error')
             return
         end
-
-        DebugLog('Placing patient on stretcher: ' .. targetId)
-        TriggerServerEvent('escort_vehicle:server:placeOnStretcher',
-            targetId, ObjToNet(StretcherState.object))
-        StretcherState.patient = targetId
-        Notify(Config.Notifications.patientPlaced, 'success')
+        PlacePatientOnStretcher(patient)
     end
 end, false)
 
@@ -196,10 +185,10 @@ if Config.Debug then
 
     RegisterCommand('escortstatus', function()
         DebugLog('========================================')
-        DebugLog('STATUS CHECK v0.6.5')
+        DebugLog('STATUS CHECK v0.7.0')
         DebugLog('Has Stretcher: ' .. tostring(StretcherState.object ~= nil))
         DebugLog('Is Carrying: '   .. tostring(StretcherState.carrying))
-        DebugLog('Patient: '       .. tostring(StretcherState.patient))
+        DebugLog('Patient: '       .. DescribePatient(StretcherState.patient))
         DebugLog('Has Permission: ' .. tostring(HasPermission()))
 
         if StretcherState.Exists() then
@@ -217,6 +206,6 @@ end
 -- ============================================================
 
 DebugLog('========================================')
-DebugLog('ESCORT + STRETCHER SYSTEM v0.6.5 LOADED')
-DebugLog('Modules: cl_utils, cl_state, cl_stretcher, cl_vehicle, cl_target, cl_commands')
+DebugLog('ESCORT + STRETCHER SYSTEM v0.7.0 LOADED')
+DebugLog('Modules: cl_utils, cl_state, cl_patient, cl_stretcher, cl_vehicle, cl_target, cl_commands')
 DebugLog('========================================')

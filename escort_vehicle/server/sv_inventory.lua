@@ -1,4 +1,4 @@
--- server/sv_inventory.lua v0.6.5 - インベントリ管理
+-- server/sv_inventory.lua v0.7.0 - インベントリ管理
 --
 -- ストレッチャーはトグル方式（return false）のため
 -- アイテムは常にインベントリに1個残る。

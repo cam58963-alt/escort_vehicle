@@ -1,4 +1,4 @@
--- client/cl_vehicle.lua v0.6.5 - 車両乗車時の自動搬送処理
+-- client/cl_vehicle.lua v0.7.0 - 車両乗車時の自動搬送処理
 
 local isProcessingVehicleEntry = false
 local lastProcessedTime = 0  -- FIX #11: 二重発火防止用タイムスタンプ
@@ -83,8 +83,7 @@ local function ProcessVehicleEntry()
         if freeSeat then
             DebugLog('Transporting patient to vehicle seat: ' .. freeSeat)
 
-            TriggerServerEvent('escort_vehicle:server:putInVehicle',
-                StretcherState.patient, VehToNet(vehicle), freeSeat)
+            PutPatientInVehicle(vehicle, freeSeat)
 
             -- FIX #7: patient は CleanupStretcher 内でデタッチされる
             CleanupStretcher()

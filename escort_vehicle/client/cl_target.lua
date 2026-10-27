@@ -1,4 +1,4 @@
--- client/cl_target.lua v0.6.5 - ox_target 統合
+-- client/cl_target.lua v0.7.0 - ox_target 統合
 
 CreateThread(function()
     if not exports.ox_target then
@@ -24,17 +24,12 @@ CreateThread(function()
                     and not StretcherState.patient
             end,
             onSelect = function()
-                local targetId = GetNearbyPatient()
-                if not targetId then
+                local patient = GetNearbyPatient()
+                if not patient then
                     Notify(Config.Notifications.noPatient, 'error')
                     return
                 end
-                if not StretcherState.Exists() then return end
-
-                TriggerServerEvent('escort_vehicle:server:placeOnStretcher',
-                    targetId, ObjToNet(StretcherState.object))
-                StretcherState.patient = targetId
-                Notify(Config.Notifications.patientPlaced, 'success')
+                PlacePatientOnStretcher(patient)
             end,
         },
         -- 患者を降ろす
@@ -46,10 +41,7 @@ CreateThread(function()
                 return HasPermission() and StretcherState.patient ~= nil
             end,
             onSelect = function()
-                TriggerServerEvent('escort_vehicle:server:removeFromStretcher',
-                    StretcherState.patient)
-                StretcherState.patient = nil
-                Notify(Config.Notifications.patientRemoved, 'success')
+                RemovePatientFromStretcher()
             end,
         },
         -- インベントリに収納
@@ -111,13 +103,39 @@ CreateThread(function()
                 if not StretcherState.Exists() then return end
 
                 DebugLog('Placing player on stretcher via ox_target - ServerId: ' .. targetId)
-                TriggerServerEvent('escort_vehicle:server:placeOnStretcher',
-                    targetId, ObjToNet(StretcherState.object))
-                StretcherState.patient = targetId
-                Notify(Config.Notifications.patientPlaced, 'success')
+                PlacePatientOnStretcher({ type = 'player', serverId = targetId })
             end,
         },
     })
+
+    -- ============================================================
+    -- 訓練用NPC ターゲット（ems_npc_rescue）
+    -- ============================================================
+
+    if Config.RescueNPC and Config.RescueNPC.enabled then
+        exports.ox_target:addGlobalPed({
+            {
+                label = 'ストレッチャーに乗せる',
+                icon  = 'fa-solid fa-bed-pulse',
+                distance = 3.0,
+                canInteract = function(entity)
+                    return HasPermission()
+                        and StretcherState.Exists()
+                        and not StretcherState.patient
+                        and IsRescueNpc(entity)
+                        and IsNpcFreeForStretcher(entity)
+                end,
+                onSelect = function(data)
+                    local patient = NpcPatientFromPed(data.entity)
+                    if not patient then
+                        Notify(Config.Notifications.noPatient, 'error')
+                        return
+                    end
+                    PlacePatientOnStretcher(patient)
+                end,
+            },
+        })
+    end
 
     DebugLog('ox_target integration complete')
 end)
