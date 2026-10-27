@@ -91,6 +91,7 @@ FiveM（QBox）向けの救急隊用ストレッチャースクリプトです�
 - NPC はその NPC を出したプレイヤーのクライアントで動かします（サーバーが中継します）
 - 訓練が終わって NPC が消えると、ストレッチャーは空に戻ります
 - 席が埋まっていたなどで車に乗せられなかったときは、NPC を車のそばに降ろして「患者を車両に乗せられませんでした」と知らせます。もう一度ストレッチャーを出して乗せ直してください
+- NPC を降ろせるのは、ストレッチャーから 10m 以内にいる時だけです。離れていると「ストレッチャーに近づいてください」と表示され、NPC は乗ったままになります
 - ems_npc_rescue で「ストレッチャー必須」にした現場では、cam_souziki の掃除機は使えません
 
 ### 注意点
@@ -110,7 +111,7 @@ FiveM（QBox）向けの救急隊用ストレッチャースクリプトです�
 | `Config.Stretcher.itemName` | アイテム名 | `'stretcher'` |
 | `Config.Stretcher.model` | ストレッチャーのプロップ | `` `prop_stretcher` `` |
 | `Config.Stretcher.carryOffset` | 押すときのストレッチャー位置・角度 | `y = -1.1, z = -0.5, rotX = 15.0` |
-| `Config.Stretcher.interactionDistance` | 車両の検索範囲（m）※現在は使われていません | `10.0` |
+| `Config.Stretcher.interactionDistance` | 車両の検索範囲（m）※今は使われていません（`GetClosestStretcherVehicle` を呼んでいる所がないため） | `10.0` |
 | `Config.Stretcher.placeDistance` | 設置位置（プレイヤー前方 m） | `2.0` |
 | `Config.Stretcher.patientDistance` | 患者の検索範囲（m） | `3.0` |
 | `Config.Stretcher.pushAnim` | 押すときのアニメーション | `anim@heists@box_carry@` / `idle` |
@@ -165,8 +166,11 @@ TriggerEvent('ambulance:server:SetPlayerOut', src, targetPlayerId)
 | `escort_vehicle:client:npcPutInVehicle` | サーバー → NPC のオーナー | NPC を指定座席にワープ |
 | `escort_vehicle:server:npcTransportFailed` | NPC のオーナー → サーバー | 車に乗せられなかったことを、ストレッチャーを使った人に知らせる |
 
-サーバー側のイベントはすべてジョブ権限と対象プレイヤーの接続をチェックしてから処理します。
-訓練用NPC のイベントは、ジョブ権限・NPC の StateBag・プレイヤーとの距離をチェックします。
+サーバー側のイベントは次の確認をしてから処理します。
+
+- プレイヤーの患者: ジョブ権限・対象プレイヤーの接続
+- 訓練用NPC: ジョブ権限・NPC の StateBag（`Config.RescueNPC.stateKey`）・プレイヤーと NPC の距離（`Config.RescueNPC.maxDistance`）
+- `npcTransportFailed`: 送ってきたのがその NPC のオーナーか
 
 ## ファイル構成
 
